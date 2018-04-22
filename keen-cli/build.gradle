@@ -1,0 +1,12 @@
+ext.moduleName = 'com.ioglyph.keen.cli'
+ext.launcherConfig = 'keen-cli=com.ioglyph.keen.cli/com.ioglyph.keen.cli.Main'
+
+dependencies {
+    compile project(':keen-engine')
+}
+
+jar {
+    manifest {
+        attributes 'Main-Class': 'com.ioglyph.keen.cli.Main'
+    }
+}

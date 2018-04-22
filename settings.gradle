@@ -1,0 +1,6 @@
+
+rootProject.name = 'keen'
+
+include 'keen-cli'
+include 'keen-engine'
+include 'keen-ui'

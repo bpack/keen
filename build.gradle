@@ -1,0 +1,81 @@
+
+subprojects {
+    apply plugin: 'java'
+
+    group 'com.ioglyph.keen'
+    version = new Version(0, 0, 1, System.env.BUILD_NUMBER)
+    sourceCompatibility = 1.9
+
+    repositories {
+        mavenCentral()
+    }
+
+    dependencies {
+        testCompile "org.junit.jupiter:junit-jupiter-engine:5.1.0"
+    }
+
+    afterEvaluate {
+        compileJava {
+            inputs.property("moduleName", moduleName)
+            doFirst {
+                options.compilerArgs = [
+                        '--module-path', classpath.asPath,
+                ]
+                classpath = files()
+            }
+        }
+    }
+}
+
+configure(subprojects.findAll { it.name != 'keen-engine' }) {
+
+    task runjlink(type: Exec) {
+        ext.outputDir = file("$buildDir/jlink")
+        inputs.files(configurations.runtimeClasspath)
+        inputs.files(jar.archivePath)
+        outputs.dir(outputDir)
+        dependsOn jar
+
+        doFirst {
+            def javaHome = System.getenv('JAVA_HOME')
+            def invoke = [
+                "$javaHome/bin/jlink",
+                '--module-path',
+                "$javaHome/jmods/:${configurations.runtimeClasspath.asPath}:${jar.archivePath}",
+                '--launcher', launcherConfig,
+                '--add-modules', moduleName,
+                '--output', outputDir,
+            ]
+
+            def compress = project.hasProperty('jlink_compress') ?
+                    ['--strip-debug', '--compress', '2', '--no-header-files', '--no-man-pages'] : []
+
+            invoke = invoke + compress
+
+            outputDir.deleteDir()
+            commandLine invoke
+        }
+    }
+}
+
+task jlink {
+    dependsOn getTasksByName('runjlink', true)
+}
+
+class Version {
+    int major
+    int minor
+    int patch
+    String build
+
+    Version(int major, int minor, int patch, String build){
+        this.major = major
+        this.minor = minor
+        this.patch = patch
+        this.build = build
+    }
+
+    @Override String toString(){
+        return "$major.$minor.$patch" + (build ? ".$build" : "-SNAPSHOT")
+    }
+}
